@@ -149,8 +149,8 @@ func (b *Bar) draw() {
 			percentage(ratio, max),
 			pbar(ratio, 0, max),
 			itsbeen(start, realnow),
-			esttotal(start, now, ratio),
-			remaining(start, now, ratio),
+			esttotal(start, now, ratio, max),
+			remaining(start, now, ratio, max),
 		}
 
 		// the actual progress bar has variable size, so lets
@@ -378,8 +378,8 @@ func itsbeen(start time.Time, now time.Time) segment {
 	}
 }
 
-func esttotal(start time.Time, now time.Time, ratio float64) segment {
-	if ratio == 0 || ratio == 1 {
+func esttotal(start time.Time, now time.Time, ratio float64, max int) segment {
+	if max == 0 || ratio == 0 || ratio == 1 {
 		return segment{
 			hide: true,
 		}
@@ -397,8 +397,8 @@ func esttotal(start time.Time, now time.Time, ratio float64) segment {
 	}
 }
 
-func remaining(start time.Time, now time.Time, ratio float64) segment {
-	if ratio == 0 || ratio == 1 {
+func remaining(start time.Time, now time.Time, ratio float64, max int) segment {
+	if max == 0 || ratio == 0 || ratio == 1 {
 		return segment{
 			hide: true,
 		}
@@ -418,7 +418,7 @@ func remaining(start time.Time, now time.Time, ratio float64) segment {
 
 func avgspeed(dur time.Duration, delta int) segment {
 	text := "---/s avg"
-	if dur > 0 {
+	if delta > 0 && dur > 0 {
 		speed := float64(delta) / dur.Seconds()
 		text = format_float(speed) + "/s avg"
 	}
@@ -440,7 +440,7 @@ func curspeed(dur time.Duration, delta int, ratio float64, max int) segment {
 	}
 
 	text := "---/s"
-	if dur > 0 {
+	if delta > 0 && dur > 0 {
 		speed := float64(delta) / dur.Seconds()
 		text = format_float(speed) + "/s"
 	}

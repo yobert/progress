@@ -11,6 +11,8 @@ func main() {
 	rand.Seed(time.Now().Unix())
 
 	smooth()
+	//infinite()
+	//chunky()
 }
 
 func infinite() {
