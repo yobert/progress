@@ -25,6 +25,8 @@ var suffixes = []string{"K", "M", "G", "T", "P"}
 
 const (
 	minbarsize = 5
+	currentdur = time.Millisecond * 500
+	sleeptime  = time.Millisecond * 50
 )
 
 type Bar struct {
@@ -93,6 +95,7 @@ func (b *Bar) draw() {
 	start := time.Now()
 
 	lastrunecount := 0
+	laststr := ""
 	clearstr := ""
 	backstr := ""
 
@@ -100,6 +103,11 @@ func (b *Bar) draw() {
 
 	sample_at := 0
 	sample_time := start
+
+	cursample_at := 0
+	cursample_time := start
+	cursample_dur := time.Duration(0)
+	cursample_count := 0
 
 	for !done {
 		select {
@@ -120,6 +128,14 @@ func (b *Bar) draw() {
 			sample_time = realnow
 		}
 
+		cd := realnow.Sub(cursample_time)
+		if cd > currentdur {
+			cursample_dur = cd
+			cursample_count = at - cursample_at
+			cursample_at = at
+			cursample_time = realnow
+		}
+
 		ratio := float64(at) / float64(max)
 		if ratio > 1 {
 			ratio = 1
@@ -128,9 +144,10 @@ func (b *Bar) draw() {
 		segs := []segment{
 			title(b.msg),
 			counts(at, max),
-			speed(now.Sub(start), at),
-			percentage(ratio),
-			pbar(ratio, 0),
+			curspeed(cursample_dur, cursample_count, ratio, max),
+			avgspeed(now.Sub(start), at),
+			percentage(ratio, max),
+			pbar(ratio, 0, max),
 			itsbeen(start, realnow),
 			esttotal(start, now, ratio),
 			remaining(start, now, ratio),
@@ -162,7 +179,7 @@ func (b *Bar) draw() {
 			if seg.barflex {
 				avail += seg.size
 
-				seg = pbar(ratio, avail)
+				seg = pbar(ratio, avail, max)
 				segs[i] = seg
 
 				avail -= seg.size
@@ -198,7 +215,7 @@ func (b *Bar) draw() {
 				if seg.barflex {
 					avail += seg.size
 
-					seg = pbar(ratio, avail)
+					seg = pbar(ratio, avail, max)
 					segs[i] = seg
 
 					avail -= seg.size
@@ -224,31 +241,34 @@ func (b *Bar) draw() {
 
 		str = " " + str + " "
 
-		runecount := RuneCount(str)
+		if str != laststr {
+			runecount := RuneCount(str)
 
-		cm := lastrunecount
-		if runecount > cm {
-			cm = runecount
-		}
-
-		clearadd := cm - len(clearstr)
-		if clearadd > 0 {
-			for i := 0; i < clearadd; i++ {
-				clearstr += " "
+			cm := lastrunecount
+			if runecount > cm {
+				cm = runecount
 			}
-		}
-		backadd := cm - len(backstr)
-		if backadd > 0 {
-			for i := 0; i < backadd; i++ {
-				backstr += "\b"
+
+			clearadd := cm - len(clearstr)
+			if clearadd > 0 {
+				for i := 0; i < clearadd; i++ {
+					clearstr += " "
+				}
 			}
+			backadd := cm - len(backstr)
+			if backadd > 0 {
+				for i := 0; i < backadd; i++ {
+					backstr += "\b"
+				}
+			}
+
+			fmt.Print(backstr[0:lastrunecount] + clearstr[0:lastrunecount] + backstr[0:lastrunecount] + str)
+
+			lastrunecount = runecount
+			laststr = str
 		}
 
-		fmt.Print(backstr[0:lastrunecount] + clearstr[0:lastrunecount] + backstr[0:lastrunecount] + str)
-
-		lastrunecount = runecount
-
-		time.Sleep(time.Millisecond * 50)
+		time.Sleep(sleeptime)
 	}
 
 	fmt.Println()
@@ -273,9 +293,15 @@ func title(text string) segment {
 }
 
 func counts(at, max int) segment {
-	ms := format_int(max)
-	msl := strconv.Itoa(len(ms))
-	text := fmt.Sprintf("%"+msl+"s / %s", format_int(at), ms)
+	text := ""
+
+	if max == 0 {
+		text = format_int(at)
+	} else {
+		ms := format_int(max)
+		msl := strconv.Itoa(len(ms))
+		text = fmt.Sprintf("%"+msl+"s / %s", format_int(at), ms)
+	}
 
 	return segment{
 		text:     text,
@@ -285,7 +311,13 @@ func counts(at, max int) segment {
 	}
 }
 
-func percentage(ratio float64) segment {
+func percentage(ratio float64, max int) segment {
+	if max == 0 {
+		return segment{
+			hide: true,
+		}
+	}
+
 	text := format_float(ratio*100.0) + " %"
 
 	return segment{
@@ -296,7 +328,13 @@ func percentage(ratio float64) segment {
 	}
 }
 
-func pbar(ratio float64, avail int) segment {
+func pbar(ratio float64, avail int, max int) segment {
+	if max == 0 {
+		return segment{
+			hide: true,
+		}
+	}
+
 	text := ""
 
 	if avail < minbarsize {
@@ -378,7 +416,29 @@ func remaining(start time.Time, now time.Time, ratio float64) segment {
 	}
 }
 
-func speed(dur time.Duration, delta int) segment {
+func avgspeed(dur time.Duration, delta int) segment {
+	text := "---/s avg"
+	if dur > 0 {
+		speed := float64(delta) / dur.Seconds()
+		text = format_float(speed) + "/s avg"
+	}
+	text = fmt.Sprintf("%7s", text)
+
+	return segment{
+		text:     text,
+		size:     RuneCount(text),
+		priority: 8,
+		align:    0,
+	}
+}
+
+func curspeed(dur time.Duration, delta int, ratio float64, max int) segment {
+	if max != 0 && (ratio == 0 || ratio == 1) {
+		return segment{
+			hide: true,
+		}
+	}
+
 	text := "---/s"
 	if dur > 0 {
 		speed := float64(delta) / dur.Seconds()
