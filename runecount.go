@@ -9,7 +9,7 @@ import (
 // Shamelessly ripped off from github.com/cheggaaa/pb/runecount.go
 
 // Finds the control character sequences (like colors)
-var ctrlRe = regexp.MustCompile("\x1b\x5b[0-9]+\x6d")
+var ctrlRe = regexp.MustCompile("\x1b\x5b[;0-9]*m")
 
 func RuneCount(s string) int {
 	n := runewidth.StringWidth(s)
