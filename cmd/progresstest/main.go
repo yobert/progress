@@ -44,10 +44,13 @@ func smooth() {
 	max := 6000
 	step := 1
 	ms := 10
-	bar := progress.NewBar(max, "Smooth")
+	bar := progress.NewBar(max, "Smooth...")
 	for i := 0; i < max; i += step {
 		time.Sleep(time.Millisecond * time.Duration(rand.Intn(ms)))
 		bar.Add(step)
+		if i == max/2 {
+			bar.SetMsg("Smooth part 2...")
+		}
 	}
 	bar.Done()
 }

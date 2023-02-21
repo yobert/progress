@@ -34,7 +34,7 @@ const (
 	currentdur = time.Millisecond * 500
 	sleeptime  = time.Millisecond * 50
 
-//	sleeptime = time.Second
+// sleeptime = time.Second
 )
 
 type Bar struct {
@@ -91,6 +91,10 @@ func (b *Bar) Next() {
 
 func (b *Bar) Add(delta int) {
 	atomic.AddInt64(&b.at, int64(delta))
+}
+
+func (b *Bar) SetMsg(msg string) {
+	b.msg = msg
 }
 
 func (b *Bar) Done() {
