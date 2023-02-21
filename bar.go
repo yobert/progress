@@ -16,7 +16,6 @@ import (
 )
 
 var blocks = []rune{' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█'}
-
 //var blocks = []rune{' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'}
 
 var pad = " "
@@ -582,8 +581,19 @@ func timings(start time.Time, now time.Time, ratio float64, max int) segment {
 	}
 }
 func format_dur(d time.Duration) string {
-	d = d.Round(time.Second)
-	return d.String()
+	d /= time.Second
+	s := d % 60
+	d /= 60
+	m := d % 60
+	d /= 60
+	h := d
+	if h > 0 {
+		return fmt.Sprintf("%2d:%02d:%02d", h, m, s)
+	}
+	if m > 0 {
+		return fmt.Sprintf("%2d:%02d", m, s)
+	}
+	return fmt.Sprintf(":%02d", s)
 }
 
 func format_dur_rough(d time.Duration) string {
