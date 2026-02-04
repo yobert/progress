@@ -41,7 +41,7 @@ func chunky() {
 }
 
 func smooth() {
-	max := 6000
+	max := 12550
 	step := 1
 	ms := 10
 	bar := progress.NewBar(max, "Smooth...")

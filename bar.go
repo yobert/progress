@@ -15,8 +15,8 @@ import (
 	"github.com/karrick/gows"
 )
 
-var blocks = []rune{' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█'}
-//var blocks = []rune{' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'}
+// var blocks = []rune{' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█'}
+var blocks = []rune{' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'}
 
 var pad = " "
 var padlen = RuneCount(pad)
@@ -590,10 +590,10 @@ func format_dur(d time.Duration) string {
 	if h > 0 {
 		return fmt.Sprintf("%2d:%02d:%02d", h, m, s)
 	}
-	if m > 0 {
-		return fmt.Sprintf("%2d:%02d", m, s)
-	}
-	return fmt.Sprintf(":%02d", s)
+	//if m > 0 {
+	return fmt.Sprintf("%2d:%02d", m, s)
+	//}
+	//return fmt.Sprintf(":%02d", s)
 }
 
 func format_dur_rough(d time.Duration) string {
